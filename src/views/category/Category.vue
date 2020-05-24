@@ -1,86 +1,105 @@
 <template>
-	<div class="wrapper">
-		<ul class="content">
-			<li>分类列表1</li>
-			<li>分类列表2</li>
-			<li>分类列表3</li>
-			<li>分类列表4</li>
-			<li>分类列表5</li>
-			<li>分类列表6</li>
-			<li>分类列表7</li>
-			<li>分类列表8</li>
-			<li>分类列表9</li>
-			<li>分类列表10</li>
-			<li>分类列表11</li>
-			<li>分类列表12</li>
-			<li>分类列表13</li>
-			<li>分类列表14</li>
-			<li>分类列表15</li>
-			<li>分类列表16</li>
-			<li>分类列表17</li>
-			<li>分类列表18</li>
-			<li>分类列表19</li>
-			<li>分类列表20</li>
-			<li>分类列表21</li>
-			<li>分类列表22</li>
-			<li>分类列表23</li>
-			<li>分类列表24</li>
-			<li>分类列表25</li>
-			<li>分类列表26</li>
-			<li>分类列表27</li>
-			<li>分类列表28</li>
-			<li>分类列表29</li>
-			<li>分类列表30</li>
-			<li>分类列表31</li>
-			<li>分类列表32</li>
-			<li>分类列表33</li>
-			<li>分类列表34</li>
-			<li>分类列表35</li>
-			<li>分类列表36</li>
-			<li>分类列表37</li>
-			<li>分类列表38</li>
-			<li>分类列表39</li>
-			<li>分类列表40</li>
-			<li>分类列表41</li>
-			<li>分类列表42</li>
-			<li>分类列表43</li>
-			<li>分类列表44</li>
-			<li>分类列表45</li>
-			<li>分类列表46</li>
-			<li>分类列表47</li>
-			<li>分类列表48</li>
-			<li>分类列表49</li>
-			<li>分类列表50</li>
-		</ul>
-	</div>
+    <div id="category">
+        <NavBar class="category-title">
+            <div slot="center">商品分类</div>
+        </NavBar>
+        <div class="content">
+            <TabMenu :table-list="categories" @selectItem="selectItem"></TabMenu>
+            <Scroll id="tab-content" ref="scroll" :data="[categoryData]">
+                <div>
+                    <TabContentCategory :subcategories="showSubcategory"></TabContentCategory>
+                </div>
+            </Scroll>
+        </div>
+
+    </div>
 </template>
 
 <script>
-	import BScroll from 'better-scroll'
-	export default{
-		name:'Category',
-		data(){
-			return {
-				scrll:null
-			}
-		},
-		mounted() {
-			this.scroll =new BScroll('.wrapper',{
-				probeType:3
-			})
-			this.scroll.on('scroll',(Position) =>{
-				
-			})
-			this.scroll.on('pullingUp',() =>{
-				
-			})
-		}
-	}
+    import NavBar from "../../components/common/navbar/NavBar"
+    import TabMenu from "./childComps/TabMenu";
+    import TabContentCategory from "./childComps/TabContentCategory";
+
+    import {getCategory, getSubcategory, getCategoryDetail} from "../../network/category";
+    import Scroll from "../../components/common/scroll/Scroll";
+
+    export default {
+        name: "Category",
+        components:{
+            NavBar,
+            TabMenu,
+            TabContentCategory,
+            Scroll
+        },
+        data(){
+          return{
+              categories:[],
+              categoryData:{},
+              currentIndex:-1,
+          }
+        },
+        created() {
+            this._getCategory()
+
+            this.$bus.$on('imgLoad', () => {
+                this.$refs.scroll.refresh()
+            })
+        },
+        computed:{
+            showSubcategory(){
+                if (this.currentIndex === -1) return {}
+                return this.categoryData[this.currentIndex].subcategories
+            }
+        },
+        methods:{
+            _getCategory(){
+                getCategory().then(res =>{
+                    this.categories =res.data.category.list
+                    for (let i =0; i<this.categories.length; i++){
+                        this.categoryData[i] = {
+                            subcategories: {}
+                        }
+                    }
+                    console.log(this.categoryData)
+                    this._getSubcategory(0)
+                })
+            },
+            _getSubcategory(index){
+                this.currentIndex =index
+                const mailKey = this.categories[index].maitKey
+                getSubcategory(mailKey).then(res =>{
+                    this.categoryData[index].subcategories = res.data
+                    console.log(this.categoryData)
+                    this.categoryData = {...this.categoryData}
+                    console.log(this.categoryData)
+                })
+            },
+            selectItem(index){
+                this._getSubcategory(index)
+            }
+        }
+    }
 </script>
 
-<style>
-	.wrapper{
-		height: 150px;
-		background-color: red;
-	}
+<style scoped>
+    #category{
+        height: 100vh;
+    }
+    .category-title{
+        background-color: var(--color-high-text);
+        font-weight: 700;
+        color: #fff;
+    }
+    .content{
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 44px;
+        bottom: 49px;
+        display: flex;
+    }
+    #tab-content{
+        height: 100%;
+        flex: 1;
+    }
 </style>
